@@ -1,0 +1,20 @@
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
+import { Navigate, Route, Routes } from 'react-router-dom';
+import { Button, Card, Skeleton } from '@/components/ui';
+import { useAuth } from '@/contexts/AuthContext';
+
+const LoginPage = lazy(() => import('@/pages/AuthPages').then((module) => ({ default: module.LoginPage })));
+const RegisterPage = lazy(() => import('@/pages/AuthPages').then((module) => ({ default: module.RegisterPage })));
+const PendingPage = lazy(() => import('@/pages/AppPages').then((module) => ({ default: module.PendingPage })));
+const AppLayout = lazy(() => import('@/pages/AppPages').then((module) => ({ default: module.AppLayout })));
+const DashboardPage = lazy(() => import('@/pages/DashboardPage').then((module) => ({ default: module.DashboardPage })));
+const SuratPage = lazy(() => import('@/pages/AppPages').then((module) => ({ default: module.SuratPage })));
+const ApprovalPage = lazy(() => import('@/pages/AppPages').then((module) => ({ default: module.ApprovalPage })));
+const UsersManagementPage = lazy(() => import('@/pages/UsersManagementPage').then((module) => ({ default: module.UsersManagementPage })));
+const ProfilePage = lazy(() => import('@/pages/ProfilePage').then((module) => ({ default: module.ProfilePage })));
+function Loading() { return <div className="flex min-h-screen items-center justify-center bg-canvas"><Skeleton className="h-16 w-72" /></div>; }
+function ProfileErrorPage() { const { profileError, refreshProfile, signOut } = useAuth(); const [retrying, setRetrying] = useState(false); async function retry() { setRetrying(true); await refreshProfile(); setRetrying(false); } return <main className="flex min-h-screen items-center justify-center bg-canvas p-5"><Card className="w-full max-w-lg p-8"><h1 className="text-2xl font-bold text-ink">Profil tidak dapat dimuat</h1><p className="mt-3 leading-relaxed text-muted">Terjadi masalah saat memuat profil akun Anda.</p><pre className="mt-5 max-h-40 overflow-auto whitespace-pre-wrap break-words rounded-input bg-danger/10 p-4 text-sm text-danger">{profileError ?? 'Kesalahan tidak diketahui.'}</pre><div className="mt-6 flex justify-end gap-3"><Button variant="secondary" onClick={() => void signOut()}>Keluar</Button><Button loading={retrying} onClick={() => void retry()}>Coba lagi</Button></div></Card></main>; }
+function Guard({ children }: { children: ReactNode }) { const { session, profile, profileError, loading } = useAuth(); if (loading) return <Loading />; if (!session) return <Navigate to="/login" replace />; if (profileError) return <ProfileErrorPage />; if (!profile || profile.status !== 'aktif') return <Navigate to="/menunggu-persetujuan" replace />; return children; }
+function AdminGuard({ children }: { children: ReactNode }) { const { profile } = useAuth(); return profile?.role === 'super_admin' ? children : <Navigate to="/" replace />; }
+function StatusGate() { const { session, profile, profileError, loading, refreshProfile } = useAuth(); const [checking, setChecking] = useState(true); useEffect(() => { if (!session) { setChecking(false); return; } setChecking(true); void refreshProfile().finally(() => setChecking(false)); }, [session, refreshProfile]); if (loading || checking) return <Loading />; if (!session) return <Navigate to="/login" replace />; if (profileError) return <ProfileErrorPage />; if (profile?.status === 'aktif') return <Navigate to="/" replace />; return <PendingPage />; }
+export default function App() { return <Suspense fallback={<Loading />}><Routes><Route path="/login" element={<LoginPage />} /><Route path="/daftar" element={<RegisterPage />} /><Route path="/menunggu-persetujuan" element={<StatusGate />} /><Route element={<Guard><AppLayout /></Guard>}><Route index element={<DashboardPage />} /><Route path="surat-masuk" element={<SuratPage />} /><Route path="persetujuan-akun" element={<AdminGuard><ApprovalPage /></AdminGuard>} /><Route path="pengguna" element={<AdminGuard><UsersManagementPage /></AdminGuard>} /><Route path="profil" element={<ProfilePage />} /></Route><Route path="*" element={<Navigate to="/" replace />} /></Routes></Suspense>; }

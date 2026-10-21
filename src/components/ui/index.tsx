@@ -1,0 +1,26 @@
+import { AnimatePresence, m } from 'framer-motion';
+import { CheckCircle2, Loader2, X, AlertCircle, Inbox } from 'lucide-react';
+import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes } from 'react';
+import { modalVariants } from '@/lib/motion';
+
+type ButtonVariant = 'primary' | 'accent' | 'secondary' | 'danger' | 'ghost';
+const buttonStyles: Record<ButtonVariant, string> = {
+  primary: 'bg-teal-900 text-white hover:bg-teal-800 shadow-soft', accent: 'bg-orange text-ink hover:brightness-95 shadow-soft', secondary: 'bg-white text-teal-900 border border-line hover:bg-canvas', danger: 'bg-danger text-white hover:brightness-95', ghost: 'text-muted hover:bg-canvas hover:text-teal-900',
+};
+export function Button({ variant = 'primary', loading = false, children, className = '', disabled, ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; loading?: boolean }) {
+  return <button className={`inline-flex h-11 items-center justify-center gap-2 rounded-input px-4 text-sm font-bold transition duration-200 disabled:cursor-not-allowed disabled:opacity-60 ${buttonStyles[variant]} ${className}`} disabled={disabled || loading} {...props}>{loading && <Loader2 className="h-4 w-4 animate-spin" />}{children}</button>;
+}
+export function Input({ label, required, error, ...props }: InputHTMLAttributes<HTMLInputElement> & { label: string; required?: boolean; error?: string }) {
+  return <label className="block space-y-2"><span className="flex items-center gap-1 text-sm font-bold text-ink">{label}{required && <span className="text-danger">*</span>}</span><input className="h-11 w-full rounded-input border border-line bg-white px-3 text-sm text-ink outline-none transition placeholder:text-muted/70 focus:border-teal-600 focus:ring-4 focus:ring-teal-600/10" {...props} />{error && <span className="text-xs text-danger">{error}</span>}</label>;
+}
+export function Select({ label, required, children, ...props }: SelectHTMLAttributes<HTMLSelectElement> & { label: string; required?: boolean }) {
+  return <label className="block space-y-2"><span className="flex items-center gap-1 text-sm font-bold text-ink">{label}{required && <span className="text-danger">*</span>}</span><select className="h-11 w-full rounded-input border border-line bg-white px-3 text-sm text-ink outline-none transition focus:border-teal-600 focus:ring-4 focus:ring-teal-600/10" {...props}>{children}</select></label>;
+}
+export function Card({ children, className = '' }: { children: ReactNode; className?: string }) { return <div className={`rounded-card border border-line bg-card shadow-soft ${className}`}>{children}</div>; }
+const badgeStyles = { success: 'bg-success/10 text-success', warning: 'bg-warning/10 text-warning', danger: 'bg-danger/10 text-danger', neutral: 'bg-neutral/10 text-neutral' };
+export function Badge({ children, tone = 'neutral' }: { children: ReactNode; tone?: keyof typeof badgeStyles }) { return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${badgeStyles[tone]}`}>{children}</span>; }
+export function Modal({ open, title, children, onClose }: { open: boolean; title: string; children: ReactNode; onClose: () => void }) { return <AnimatePresence>{open && <div className="fixed inset-0 z-50 flex items-center justify-center bg-teal-900/30 p-4 backdrop-blur-sm"><m.div variants={modalVariants} initial="initial" animate="animate" exit="exit" className="w-full max-w-lg rounded-card bg-card p-6 shadow-deep"><div className="mb-5 flex items-center justify-between"><h2 className="text-lg font-bold text-ink">{title}</h2><button onClick={onClose} className="rounded-full p-2 text-muted hover:bg-canvas" aria-label="Tutup"><X className="h-5 w-5" /></button></div>{children}</m.div></div>}</AnimatePresence>; }
+export function Toast({ message, action, onAction, onClose }: { message: string; action?: string; onAction?: () => void; onClose: () => void }) { return <div className="fixed bottom-5 right-5 z-50 flex max-w-sm items-center gap-3 rounded-input bg-teal-900 px-4 py-3 text-sm text-white shadow-deep"><CheckCircle2 className="h-5 w-5 shrink-0 text-teal-200" /><span>{message}</span>{action && <button onClick={onAction} className="font-bold text-orange underline">{action}</button>}<button onClick={onClose} aria-label="Tutup"><X className="h-4 w-4" /></button></div>; }
+export function Skeleton({ className = '' }: { className?: string }) { return <div className={`animate-shimmer rounded-input bg-line/60 ${className}`} />; }
+export function EmptyState({ title, description, action }: { title: string; description: string; action?: ReactNode }) { return <div className="flex flex-col items-center justify-center rounded-card border border-dashed border-line bg-white px-6 py-16 text-center"><Inbox className="mb-4 h-10 w-10 text-teal-600" /><h3 className="text-lg font-bold text-ink">{title}</h3><p className="mt-2 max-w-sm text-sm leading-relaxed text-muted">{description}</p>{action && <div className="mt-5">{action}</div>}</div>; }
+export function ErrorMessage({ children }: { children: ReactNode }) { return <div className="flex items-center gap-2 rounded-input bg-danger/10 px-3 py-2 text-sm text-danger"><AlertCircle className="h-4 w-4 shrink-0" />{children}</div>; }
